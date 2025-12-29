@@ -26,6 +26,8 @@ The LC-3 VM is an educational project that simulates the LC-3 architecture. It i
 - Supports **all 16 LC-3 opcodes**
 - Support on *virtually* all OS; Windows, macOS, and Linux
 
+Basic programs are given in the [programs](programs/) folder. Instructions on usage down below.
+
 ---
 
 ## Prerequisites
