@@ -397,11 +397,21 @@ int main(int argc, char *argv[]) {
     }
 
     /* Replay & Logging */
-    if (replay_mode == MODE_RECORD) log_file = fopen("log", "wb");
-    else {
+    if (replay_mode == MODE_RECORD) {
+        log_file = fopen("log", "wb");
+        if (!log_file) {
+            perror("fopen log (record)");
+            exit(1);
+        }
+    } else {
         log_file = fopen("log", "rb");
+        if (!log_file) {
+            perror("fopen log (replay)");
+            exit(1);
+        }
         load_next_event();
     }
+
     
     reg[R_COND] = FL_ZRO;
     reg[R_PC] = 0x3000; /* 0x3000 is default PC*/
