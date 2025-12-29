@@ -7,8 +7,8 @@
 
 /* Compile with:  g++ lc3.c -o lc3-vm.exe                */
 /* Run with:      
-        .\lc3-vm.exe programs\2048.obj        
-        .\lc3-vm.exe programs\rogue.obj
+        .\lc3-vm.exe programs\2048.obj --replay       
+        .\lc3-vm.exe programs\rogue.obj --record
 */
 
 #define MEMORY_MAX (1 << 16)
@@ -30,7 +30,7 @@ uint64_t instr_count = 0;
 int running = 0;
 
 enum { MODE_RECORD, MODE_REPLAY };
-int replay_mode = MODE_REPLAY;
+int replay_mode = MODE_RECORD;
 
 enum
 {
@@ -385,14 +385,24 @@ int main(int argc, char *argv[]) {
     disable_input_buffering();
 
     if (argc < 2) {
-        printf("lc3 [image-file1] ...\n"); /* Usage String */
+        printf("Usage: lc3-vm program.obj [--record | --replay]\n");
         exit(2);
     }
 
-    for (int j = 1; j < argc; ++j) {
-        if (!read_image(argv[j])) {
-            printf("Failed to load image: %s\n", argv[j]);
-            exit(1);
+    if (!read_image(argv[1])) {
+        printf("Failed to load image: %s\n", argv[1]);
+        exit(1);
+    }
+
+    // Optional flag
+    if (argc >= 3) {
+        if (strcmp(argv[2], "--record") == 0) {
+            replay_mode = MODE_RECORD;
+        } else if (strcmp(argv[2], "--replay") == 0) {
+            replay_mode = MODE_REPLAY;
+        } else {
+            printf("Unknown flag: %s\n", argv[2]);
+            exit(2);
         }
     }
 
