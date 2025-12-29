@@ -24,7 +24,7 @@ The LC-3 VM is an educational project that simulates the LC-3 architecture. It i
 - Keyboard input handling
 - Executes 16-bit LC-3 instructions
 - Supports **all 16 LC-3 opcodes**
-- Support on Windows, macOS, and Linux
+- Support on *virtually* all OS; Windows, macOS, and Linux
 
 ---
 
@@ -38,7 +38,6 @@ The LC-3 VM is an educational project that simulates the LC-3 architecture. It i
 
 ## Usage
 
-### On All OS
 ```bash
 # Run and record keyboard input
 ./lc3-vm path/to/program.obj --record
