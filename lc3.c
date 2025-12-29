@@ -30,7 +30,7 @@ uint64_t instr_count = 0;
 int running = 0;
 
 enum { MODE_RECORD, MODE_REPLAY };
-int replay_mode = MODE_RECORD;
+int replay_mode = MODE_REPLAY;
 
 enum
 {
@@ -207,11 +207,7 @@ void trap_puts() {
 
 void trap_input() {
     uint16_t key;
-    if (replay_mode == MODE_REPLAY) {
-        if (!has_next_event) {
-        running = 0;
-        return;
-        }
+    if (replay_mode == MODE_REPLAY && has_next_event) {
         key = next_event.key;
         load_next_event();
     } else {
