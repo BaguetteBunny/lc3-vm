@@ -364,15 +364,15 @@ int main(int argc, char *argv[]) {
     reg[R_COND] = FL_ZRO;
     reg[R_PC] = 0x3000; /* 0x3000 is default PC*/
 
+    uint64_t instr_count = 0;
     running = 1;
-    while (running)
-    {
+    while (running) {
+        instr_count++;
         /* FETCH */
         uint16_t instr = mem_read(reg[R_PC]++);
         uint16_t op = instr >> 12; /* Get first 4 bits (Op bits) */
 
-        switch (op)
-        {
+        switch (op) {
             case OP_ADD:
                 add(instr);
                 break;
