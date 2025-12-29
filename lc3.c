@@ -5,8 +5,11 @@
 #include <Windows.h>
 #include <conio.h>  // _kbhit
 
-/* Compile with:  g++lc3.c -o lc3-vm.exe*/
-/* Run with:      .\lc3-vm.exe programs\2048.obj*/
+/* Compile with:  g++ lc3.c -o lc3-vm.exe                */
+/* Run with:      
+        .\lc3-vm.exe programs\2048.obj        
+        .\lc3-vm.exe programs\rogue.obj
+*/
 
 #define MEMORY_MAX (1 << 16)
 
@@ -18,7 +21,16 @@
 #define PC_OFFSET(i) sign_extend((i) & 0x1FF, 9)
 #define SWAP_16(x) (((x) << 8) | ((x) >> 8))
 
+typedef struct {
+    uint64_t instr;
+    uint16_t key;
+} KeyEvent;
+
+uint64_t instr_count = 0;
 int running = 0;
+
+enum { MODE_RECORD, MODE_REPLAY };
+int replay_mode = MODE_RECORD;
 
 enum
 {
@@ -80,10 +92,27 @@ enum
 
 uint16_t reg[R_COUNT];
 uint16_t memory[MEMORY_MAX];
-
+FILE* log_file;
+KeyEvent next_event;
+int has_next_event = 0; 
+    
 /* Input Buffering */
 HANDLE hStdin = INVALID_HANDLE_VALUE;
 DWORD fdwMode, fdwOldMode;
+
+void log_key(uint16_t c) {
+    KeyEvent ev = {
+        .instr = instr_count, 
+        .key = c
+    };
+
+    fwrite(&ev, sizeof(ev), 1, log_file);
+}
+
+void load_next_event() {
+    if (fread(&next_event, sizeof(next_event), 1, log_file) == 1) has_next_event = 1;
+    else has_next_event = 0;
+}
 
 void disable_input_buffering() {
     hStdin = GetStdHandle(STD_INPUT_HANDLE);
@@ -143,10 +172,7 @@ uint16_t mem_read(uint16_t address) {
         if (check_key()) {
             memory[MR_KBSR] = (1 << 15);
             memory[MR_KBDR] = getchar();
-        }
-        else {
-            memory[MR_KBSR] = 0;
-        }
+        } else memory[MR_KBSR] = 0;
     }
     return memory[address];
 }
@@ -180,7 +206,19 @@ void trap_puts() {
 }
 
 void trap_input() {
-    reg[R_R0] = (uint16_t) getchar();
+    uint16_t key;
+    if (replay_mode == MODE_REPLAY) {
+        if (!has_next_event) {
+        running = 0;
+        return;
+        }
+        key = next_event.key;
+        load_next_event();
+    } else {
+        key = getchar();
+        log_key(key);
+    }
+    reg[R_R0] = key;
     update_flags(R_R0);
 }
 
@@ -221,6 +259,7 @@ void trap_halt() {
 
 void trap_switch(uint16_t i) {
     reg[R_R7] = reg[R_PC];
+
     switch (i & 0xFF) {
         case TRAP_GETC:
             trap_input();
@@ -361,13 +400,22 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* Replay & Logging */
+    if (replay_mode == MODE_RECORD) log_file = fopen("log", "wb");
+    else {
+        log_file = fopen("log", "rb");
+        load_next_event();
+    }
+    
     reg[R_COND] = FL_ZRO;
     reg[R_PC] = 0x3000; /* 0x3000 is default PC*/
 
-    uint64_t instr_count = 0;
     running = 1;
     while (running) {
+
+        /* REPLAY*/
         instr_count++;
+
         /* FETCH */
         uint16_t instr = mem_read(reg[R_PC]++);
         uint16_t op = instr >> 12; /* Get first 4 bits (Op bits) */
